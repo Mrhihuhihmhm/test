@@ -1,0 +1,337 @@
+-- Atlas UI Library
+local AtlasLib = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- UI Settings
+local UISettings = {
+    MainColor = Color3.fromRGB(32, 32, 42),
+    AccentColor = Color3.fromRGB(82, 82, 255),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.GothamSemibold,
+    TweenSpeed = 0.15
+}
+
+-- Create Window
+function AtlasLib:CreateWindow(WindowName)
+    local Window = {}
+    
+    -- Main GUI
+    local AtlasUI = Instance.new("ScreenGui")
+    AtlasUI.Name = "AtlasUI"
+    AtlasUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    AtlasUI.ResetOnSpawn = false
+    
+    -- Handle different exploit environments
+    pcall(function()
+        if syn then
+            syn.protect_gui(AtlasUI)
+            AtlasUI.Parent = game.CoreGui
+        else
+            AtlasUI.Parent = game:GetService("CoreGui")
+        end
+    end)
+    
+    local Main = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local TopBar = Instance.new("Frame")
+    local TopBarCorner = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local TabHolder = Instance.new("ScrollingFrame")
+    local TabList = Instance.new("UIListLayout")
+    local ContentContainer = Instance.new("Frame")
+    
+    -- Main Frame Setup
+    Main.Name = "Main"
+    Main.Parent = AtlasUI
+    Main.BackgroundColor3 = UISettings.MainColor
+    Main.Position = UDim2.new(0.5, -300, 0.5, -175)
+    Main.Size = UDim2.new(0, 600, 0, 350)
+    Main.ClipsDescendants = true
+    Main.Active = true
+    Main.Draggable = true
+    Main.Visible = true
+    
+    UICorner.CornerRadius = UDim.new(0, 6)
+    UICorner.Parent = Main
+    
+    -- Top Bar Setup
+    TopBar.Name = "TopBar"
+    TopBar.Parent = Main
+    TopBar.BackgroundColor3 = UISettings.AccentColor
+    TopBar.Size = UDim2.new(1, 0, 0, 30)
+    TopBar.ZIndex = 2
+    
+    TopBarCorner.CornerRadius = UDim.new(0, 6)
+    TopBarCorner.Parent = TopBar
+    
+    Title.Name = "Title"
+    Title.Parent = TopBar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -20, 1, 0)
+    Title.Font = UISettings.Font
+    Title.Text = WindowName
+    Title.TextColor3 = UISettings.TextColor
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.ZIndex = 2
+    
+    -- Tab Holder Setup
+    TabHolder.Name = "TabHolder"
+    TabHolder.Parent = Main
+    TabHolder.BackgroundColor3 = UISettings.MainColor
+    TabHolder.BackgroundTransparency = 0.5
+    TabHolder.Position = UDim2.new(0, 5, 0, 35)
+    TabHolder.Size = UDim2.new(0, 140, 1, -40)
+    TabHolder.ScrollBarThickness = 2
+    TabHolder.ScrollBarImageColor3 = UISettings.AccentColor
+    
+    TabList.Parent = TabHolder
+    TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Padding = UDim.new(0, 5)
+    
+    -- Content Container Setup
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Parent = Main
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Position = UDim2.new(0, 150, 0, 35)
+    ContentContainer.Size = UDim2.new(1, -155, 1, -40)
+    
+    -- Create Tab Function
+    function Window:CreateTab(TabName)
+        local Tab = {}
+        
+        local TabButton = Instance.new("TextButton")
+        local TabButtonCorner = Instance.new("UICorner")
+        local TabContent = Instance.new("ScrollingFrame")
+        local ContentList = Instance.new("UIListLayout")
+        
+        TabButton.Name = "TabButton"
+        TabButton.Parent = TabHolder
+        TabButton.BackgroundColor3 = UISettings.MainColor
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
+        TabButton.Text = TabName
+        TabButton.TextColor3 = UISettings.TextColor
+        TabButton.Font = UISettings.Font
+        TabButton.TextSize = 14
+        TabButton.AutoButtonColor = false
+        
+        TabButtonCorner.CornerRadius = UDim.new(0, 6)
+        TabButtonCorner.Parent = TabButton
+        
+        TabContent.Name = "TabContent"
+        TabContent.Parent = ContentContainer
+        TabContent.BackgroundTransparency = 1
+        TabContent.Size = UDim2.new(1, 0, 1, 0)
+        TabContent.ScrollBarThickness = 2
+        TabContent.ScrollBarImageColor3 = UISettings.AccentColor
+        TabContent.Visible = false
+        TabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        
+        ContentList.Parent = TabContent
+        ContentList.SortOrder = Enum.SortOrder.LayoutOrder
+        ContentList.Padding = UDim.new(0, 5)
+        
+        -- Tab Button Click Handler
+        TabButton.MouseButton1Click:Connect(function()
+            for _, content in pairs(ContentContainer:GetChildren()) do
+                if content:IsA("ScrollingFrame") then
+                    content.Visible = false
+                end
+            end
+            TabContent.Visible = true
+            
+            for _, button in pairs(TabHolder:GetChildren()) do
+                if button:IsA("TextButton") then
+                    TweenService:Create(button, TweenInfo.new(UISettings.TweenSpeed), {
+                        BackgroundColor3 = UISettings.MainColor
+                    }):Play()
+                end
+            end
+            
+            TweenService:Create(TabButton, TweenInfo.new(UISettings.TweenSpeed), {
+                BackgroundColor3 = UISettings.AccentColor
+            }):Play()
+        end)
+        
+        -- Show first tab by default
+        if #TabHolder:GetChildren() == 2 then
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = UISettings.AccentColor
+        end
+        
+        -- Create Button
+        function Tab:CreateButton(ButtonText, Callback)
+            local Button = Instance.new("TextButton")
+            local ButtonCorner = Instance.new("UICorner")
+            
+            Button.Name = "Button"
+            Button.Parent = TabContent
+            Button.BackgroundColor3 = UISettings.MainColor
+            Button.Size = UDim2.new(1, -10, 0, 30)
+            Button.Text = ButtonText
+            Button.TextColor3 = UISettings.TextColor
+            Button.Font = UISettings.Font
+            Button.TextSize = 14
+            Button.AutoButtonColor = false
+            
+            ButtonCorner.CornerRadius = UDim.new(0, 6)
+            ButtonCorner.Parent = Button
+            
+            Button.MouseButton1Click:Connect(function()
+                Callback()
+            end)
+            
+            Button.MouseEnter:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(UISettings.TweenSpeed), {
+                    BackgroundColor3 = UISettings.AccentColor
+                }):Play()
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                TweenService:Create(Button, TweenInfo.new(UISettings.TweenSpeed), {
+                    BackgroundColor3 = UISettings.MainColor
+                }):Play()
+            end)
+        end
+        
+        -- Create Toggle
+        function Tab:CreateToggle(ToggleText, Default, Callback)
+            local Toggle = Instance.new("Frame")
+            local ToggleCorner = Instance.new("UICorner")
+            local ToggleButton = Instance.new("TextButton")
+            local Status = Instance.new("Frame")
+            local StatusCorner = Instance.new("UICorner")
+            
+            Toggle.Name = "Toggle"
+            Toggle.Parent = TabContent
+            Toggle.BackgroundColor3 = UISettings.MainColor
+            Toggle.Size = UDim2.new(1, -10, 0, 30)
+            
+            ToggleCorner.CornerRadius = UDim.new(0, 6)
+            ToggleCorner.Parent = Toggle
+            
+            ToggleButton.Name = "ToggleButton"
+            ToggleButton.Parent = Toggle
+            ToggleButton.BackgroundTransparency = 1
+            ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+            ToggleButton.Text = ToggleText
+            ToggleButton.TextColor3 = UISettings.TextColor
+            ToggleButton.Font = UISettings.Font
+            ToggleButton.TextSize = 14
+            
+            Status.Name = "Status"
+            Status.Parent = Toggle
+            Status.BackgroundColor3 = Default and UISettings.AccentColor or UISettings.MainColor
+            Status.Position = UDim2.new(1, -25, 0.5, -8)
+            Status.Size = UDim2.new(0, 16, 0, 16)
+            
+            StatusCorner.CornerRadius = UDim.new(0, 4)
+            StatusCorner.Parent = Status
+            
+            local Toggled = Default
+            ToggleButton.MouseButton1Click:Connect(function()
+                Toggled = not Toggled
+                TweenService:Create(Status, TweenInfo.new(UISettings.TweenSpeed), {
+                    BackgroundColor3 = Toggled and UISettings.AccentColor or UISettings.MainColor
+                }):Play()
+                Callback(Toggled)
+            end)
+        end
+        
+        -- Create Slider
+        function Tab:CreateSlider(SliderText, Min, Max, Default, Callback)
+            local Slider = Instance.new("Frame")
+            local SliderCorner = Instance.new("UICorner")
+            local SliderTitle = Instance.new("TextLabel")
+            local SliderBar = Instance.new("Frame")
+            local SliderBarCorner = Instance.new("UICorner")
+            local SliderFill = Instance.new("Frame")
+            local SliderFillCorner = Instance.new("UICorner")
+            local Value = Instance.new("TextLabel")
+            
+            Slider.Name = "Slider"
+            Slider.Parent = TabContent
+            Slider.BackgroundColor3 = UISettings.MainColor
+            Slider.Size = UDim2.new(1, -10, 0, 45)
+            
+            SliderCorner.CornerRadius = UDim.new(0, 6)
+            SliderCorner.Parent = Slider
+            
+            SliderTitle.Name = "SliderTitle"
+            SliderTitle.Parent = Slider
+            SliderTitle.BackgroundTransparency = 1
+            SliderTitle.Position = UDim2.new(0, 5, 0, 0)
+            SliderTitle.Size = UDim2.new(1, -10, 0, 20)
+            SliderTitle.Text = SliderText
+            SliderTitle.TextColor3 = UISettings.TextColor
+            SliderTitle.Font = UISettings.Font
+            SliderTitle.TextSize = 14
+            SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+            
+            SliderBar.Name = "SliderBar"
+            SliderBar.Parent = Slider
+            SliderBar.BackgroundColor3 = Color3.fromRGB(52, 52, 62)
+            SliderBar.Position = UDim2.new(0, 5, 0, 25)
+            SliderBar.Size = UDim2.new(1, -50, 0, 4)
+            
+            SliderBarCorner.CornerRadius = UDim.new(0, 2)
+            SliderBarCorner.Parent = SliderBar
+            
+            SliderFill.Name = "SliderFill"
+            SliderFill.Parent = SliderBar
+            SliderFill.BackgroundColor3 = UISettings.AccentColor
+            SliderFill.Size = UDim2.new((Default - Min)/(Max - Min), 0, 1, 0)
+            
+            SliderFillCorner.CornerRadius = UDim.new(0, 2)
+            SliderFillCorner.Parent = SliderFill
+            
+            Value.Name = "Value"
+            Value.Parent = Slider
+            Value.BackgroundTransparency = 1
+            Value.Position = UDim2.new(1, -40, 0, 0)
+            Value.Size = UDim2.new(0, 35, 0, 20)
+            Value.Text = tostring(Default)
+            Value.TextColor3 = UISettings.TextColor
+            Value.Font = UISettings.Font
+            Value.TextSize = 14
+            
+            local Dragging = false
+            
+            SliderBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    Dragging = true
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    Dragging = false
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local SizeScale = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+                    local Value = math.floor(Min + ((Max - Min) * SizeScale))
+                    
+                    TweenService:Create(SliderFill, TweenInfo.new(UISettings.TweenSpeed), {
+                        Size = UDim2.new(SizeScale, 0, 1, 0)
+                    }):Play()
+                    
+                    Value.Text = tostring(Value)
+                    Callback(Value)
+                end
+            end)
+        end
+        
+        return Tab
+    end
+    
+    return Window
+end
+
+return AtlasLib
